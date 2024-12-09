@@ -77,6 +77,21 @@ The database is now read to be used. If the database is empty, see below how to 
           control the names of primary/reference tables. By default, these match the SIMPLE database, but users can
           configure them for their own needs and can pass them here or modify their __init__.py file.
 
+
+When using PostgreSQL databases, it may be useful to pass along connection_arguments that specify the schema to use. For example::
+
+    CONNECTION_STRING = "postgresql+psycopg2://user:password@server:port/database"
+    REFERENCE_TABLES = [
+        "Publications",
+        "Surveys",
+    ]
+
+    db = Database(CONNECTION_STRING, 
+        reference_tables=REFERENCE_TABLES, 
+        connection_arguments={'options': '-csearch_path=my_schema'}
+        )
+    # This will use my_schema as the default schema for this connection
+
 Loading the Database
 --------------------
 

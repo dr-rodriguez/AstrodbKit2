@@ -144,7 +144,8 @@ def load_connection(connection_string, sqlite_foreign=True, base=None, connectio
     base : SQLAlchemy base object
         Use an existing base class. Default: None (ie, creates a new one)
     connection_arguments : dict
-        Additional connection arguments, like {'check_same_thread': False}
+        Additional connection arguments, like {"check_same_thread": False}.   
+        When using PostgreSQL, you may need to set {"options": "-csearch_path=SCHEMA_NAME"} to set the schema you'll be using
 
     Returns
     -------
