@@ -63,7 +63,7 @@ With that on hand, users should import their schema and prepare the database::
 Creating a Database with Felis schema
 -------------------------------------
 
-The `LSST Felis package <https://felis.lsst.io/index.html>`_ provides an alternate way of writing a database schema file. 
+The `LSST Felis package <https://felis.lsst.io/index.html>`_ provides a way of writing a database schema file. 
 An example yaml file is provided in this repo (see schema_example_felis.yaml). 
 Users that want to use Felis will need to install that package (lsst-felis), which you can do alongside astrodbkit with `pip install astrodbkit[felis]`.
 Note that Python 3.11 or higher is required to use Felis.
