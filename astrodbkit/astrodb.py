@@ -6,6 +6,7 @@ import json
 import os
 import sqlite3
 import shutil
+import yaml
 
 import numpy as np
 import pandas as pd
@@ -189,7 +190,7 @@ def set_sqlite():
         cursor.close()
 
 
-def create_database(connection_string, drop_tables=False):
+def create_database(connection_string, drop_tables=False, felis_schema=None):
     """
     Create a database from a schema that utilizes the `astrodbkit2.astrodb.Base` class.
     Some databases, eg Postgres, must already exist but any tables should be dropped.
@@ -200,12 +201,43 @@ def create_database(connection_string, drop_tables=False):
         Connection string to database
     drop_tables : bool
         Flag to drop existing tables. This is needed when the schema changes. (Default: False)
+    felis_schema : str
+        Path to schema yaml file
     """
 
-    session, base, engine = load_connection(connection_string, base=Base)
-    if drop_tables:
-        base.metadata.drop_all()
-    base.metadata.create_all(engine)  # this explicitly creates the database
+    if felis_schema is not None:
+        # Felis loader requires felis_schema
+        from felis.datamodel import Schema
+        from felis.metadata import MetaDataBuilder
+
+        # Load and validate the felis-formatted schema
+        data = yaml.safe_load(open(felis_schema, "r"))
+        schema = Schema.model_validate(data)
+        schema_name = data["name"]  # get schema_name from the felis schema file
+
+        # engine = create_engine(connection_string)
+        session, base, engine = load_connection(connection_string)
+
+        # Workaround for SQLite since it doesn't support schema
+        if connection_string.startswith("sqlite"):
+            db_name = connection_string.split("/")[-1]
+            with engine.begin() as conn:
+                conn.execute(text(f"ATTACH '{db_name}' AS {schema_name}"))
+
+        # Drop tables, if requested
+        if drop_tables:
+            base.metadata.drop_all()
+
+        # Create the database
+        metadata = MetaDataBuilder(schema).build()
+        metadata.create_all(bind=engine)
+        base.metadata = metadata
+    else:
+        session, base, engine = load_connection(connection_string, base=Base)
+        if drop_tables:
+            base.metadata.drop_all()
+        base.metadata.create_all(engine)  # this explicitly creates the database
+
     return session, base, engine
 
 

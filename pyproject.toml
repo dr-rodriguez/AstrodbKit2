@@ -42,7 +42,10 @@ test = [
 docs = [
     "sphinx-astropy"
 ]
-all = ["astrodbkit[test, docs]"]
+felis = [
+    "lsst-felis"
+]
+all = ["astrodbkit[test, docs, felis]"]
 
 [project.urls]
 Repository = "https://github.com/astrodbtoolkit/AstrodbKit"
