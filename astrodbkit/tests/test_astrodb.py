@@ -55,6 +55,23 @@ def db():
     return db
 
 
+def test_felis_db():
+    # Test felis database creation logic
+    db_path = "felis.db"
+
+    # Clear copy if file present
+    if os.path.exists(db_path):
+        os.remove(db_path)
+
+    # Actually attempt to create database using the felis-formatted yaml file
+    connection_string = 'sqlite:///' + db_path
+    create_database(connection_string, felis_schema="astrodbkit/schema_example_felis.yaml")
+    assert os.path.exists(db_path)
+
+    if os.path.exists(db_path):
+        os.remove(db_path)
+
+
 def test_add_data(db):
     # Load example data to the database
 

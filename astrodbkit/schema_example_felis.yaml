@@ -1,0 +1,337 @@
+name: felis_temp
+"@id": "#felis_temp"
+description: "Template database for testing use"
+
+tables:
+
+  - name: Publications
+    "@id": "#Publications"
+    description: Reference information (DOI, bibcodes, etc)
+    primaryKey: 
+    - "#Publications.name"
+
+    columns:
+    - name: name
+      "@id": "#Publications.name"
+      datatype: string
+      length: 30
+      description: Publication reference identifier
+      ivoa:ucd: meta.ref;meta.main
+      nullable: false
+    - name: bibcode
+      "@id": "#Publications.bibcode"
+      datatype: string
+      length: 100
+      description: Publication bibcode
+      ivoa:ucd: meta.bib.bibcode
+    - name: doi
+      "@id": "#Publications.doi"
+      datatype: string
+      length: 100
+      description: Publication DOI
+      ivoa:ucd: meta.ref.doi
+    - name: description
+      "@id": "#Publications.description"
+      datatype: string
+      length: 1000
+      description: Publication description
+
+
+  - name: Telescopes
+    "@id": "#Telescopes"
+    description: Telescope, mission, and survey information
+    primaryKey: 
+    - "#Telescopes.name"
+
+    columns:
+    - name: name
+      "@id": "#Telescopes.name"
+      datatype: string
+      length: 30
+      description: Telescope, mission, or survey name
+      ivoa:ucd: meta.id;meta.main
+      nullable: false
+    - name: reference
+      "@id": "#Telescopes.reference"
+      datatype: string
+      length: 30
+      description: Publication reference; links to Publications table
+
+    constraints:
+      - name: Telescopes_reference_Publications_name
+        "@type": "ForeignKey"
+        "@id": "#FK_Telescopes_reference_Publications_name"
+        description: Link Telescopes reference to Publications table
+        columns:
+        - "#Telescopes.reference"
+        referencedColumns:
+        - "#Publications.name"
+
+
+  - name: Instruments
+    "@id": "#Instruments"
+    description: Instrument information
+    primaryKey: 
+    - "#Instruments.name"
+
+    columns:
+    - name: name
+      "@id": "#Instruments.name"
+      datatype: string
+      length: 30
+      description: Instrument name
+      ivoa:ucd: instr;meta.main
+      nullable: false
+    - name: reference
+      "@id": "#Instruments.reference"
+      datatype: string
+      length: 30
+      description: Publication reference; links to Publications table
+      ivoa:ucd: meta.ref
+
+    constraints:
+      - name: Instruments_reference_Publications_name
+        "@type": "ForeignKey"
+        "@id": "#FK_Instruments_reference_Publications_name"
+        description: Link Instruments reference to Publications table
+        columns:
+        - "#Instruments.reference"
+        referencedColumns:
+        - "#Publications.name"
+
+
+  - name: Regimes
+    "@id": "#Regimes"
+    description: Regime lookup table
+    primaryKey: 
+    - "#Regimes.regime"
+
+    columns:
+    - name: regime
+      "@id": "#Regimes.regime"
+      datatype: string
+      length: 30
+      description: Regime identifier string
+      ivoa:ucd: meta.id;meta.main
+      nullable: false
+
+
+  - name: Sources
+    "@id": "#Sources"
+    description: "Main identifiers for objects along with coordinates."
+    primaryKey:
+    - "#Sources.source"
+
+    columns:
+    - name: source
+      "@id": "#Sources.source"
+      datatype: string
+      length: 100
+      description: Unique identfier for an object
+      ivoa:ucd: meta.id;src;meta.main
+      nullable: false
+    - name: ra
+      "@id": "#Sources.ra"
+      datatype: double
+      description: ICRS Right Ascension of object
+      fits:tunit: deg
+      ivoa:ucd: pos.eq.ra;meta.main
+    - name: dec
+      "@id": "#Sources.dec"
+      datatype: double
+      description: ICRS Declination of object
+      fits:tunit: deg
+      ivoa:ucd: pos.eq.dec;meta.main
+    - name: shortname
+      "@id": "#Sources.shortname"
+      datatype: string
+      length: 30
+      description: Short identfier for an object
+      ivoa:ucd: meta.id
+    - name: reference
+      "@id": "#Sources.reference"
+      datatype: string
+      length: 30
+      description: Publication reference; links to Publications table
+      ivoa:ucd: meta.ref;meta.main
+      nullable: false
+    - name: comments
+      "@id": "#Sources.comments"
+      datatype: string
+      length: 1000
+      description: Free-form comments on this Source
+
+
+    indexes:
+      - name: PK_Sources_source
+        "@id": "#PK_Sources_source"
+        description: Primary key for Sources table
+        columns: 
+        - "#Sources.source"
+    constraints:
+      - name: check_ra
+        "@type": Check
+        "@id": "#Sources_check_ra_bounds"
+        description: Validate RA range
+        expression: ra >= 0 AND ra <= 360
+      - name: check_dec
+        "@type": Check
+        "@id": "#Sources_check_dec_bounds"
+        description: Validate Dec range
+        expression: dec >= -90 AND dec <= 90
+      - name: Source_reference_Publications_name
+        "@type": "ForeignKey"
+        "@id": "#FK_Sources_reference_Publications_name"
+        description: Link Source reference to Publications table
+        columns:
+        - "#Sources.reference"
+        referencedColumns:
+        - "#Publications.name"
+
+
+  - name: Names
+    "@id": "#Names"
+    description: "Additional identifiers for objects in Sources table"
+    primaryKey:
+    - "#Names.source"
+    - "#Names.other_name"
+
+    columns:
+    - name: source
+      "@id": "#Names.source"
+      datatype: string
+      length: 100
+      description: Main identfier for an object; links to Sources table
+      ivoa:ucd: meta.id;meta.main
+      nullable: false
+    - name: other_name
+      "@id": "#Names.other_name"
+      datatype: string
+      length: 100
+      description: Alternate identifier for an object
+      ivoa:ucd: meta.id
+      nullable: false
+
+    indexes:
+      - name: PK_Names_source
+        "@id": "#PK_Names_source"
+        description: Primary key for Names table
+        columns: 
+        - "#Names.source"
+        - "#Names.other_name"
+    constraints:
+      - name: Names_source_Source_source
+        "@type": "ForeignKey"
+        "@id": "#FK_Names_source_Source_source"
+        description: Link Names primary identifer to Sources table
+        columns:
+        - "#Names.source"
+        referencedColumns:
+        - "#Sources.source"
+
+
+  - name: Photometry
+    "@id": "#Photometry"
+    description: Photometry for Sources
+    primaryKey: 
+    - "#Photometry.source"
+    - "#Photometry.band"
+    - "#Photometry.reference"
+
+    columns:
+    - name: source
+      "@id": "#Photometry.source"
+      datatype: string
+      length: 100
+      description: Main identfier for an object; links to Sources table
+      ivoa:ucd: meta.id;meta.main
+      nullable: false
+    - name: band
+      "@id": "#Photometry.band"
+      datatype: string
+      length: 30
+      description: Photometry band for this measurement
+    - name: ucd
+      "@id": "#Photometry.ucd"
+      datatype: string
+      length: 100
+      description: UCD for this measurement
+    - name: magnitude
+      "@id": "#Photometry.magnitude"
+      datatype: double
+      description: Magnitude value for this entry
+      fits:tunit: mag
+    - name: magnitude_error
+      "@id": "#Photometry.magnitude_error"
+      datatype: double
+      description: Uncertainty of this magnitude value
+      fits:tunit: mag
+    - name: telescope
+      "@id": "#Photometry.telescope"
+      datatype: string
+      length: 30
+      description: Telescope, mission, or survey name; links to Telescopes table
+    - name: instrument
+      "@id": "#Photometry.instrument"
+      datatype: string
+      length: 30
+      description: Instrument name; links to Instruments table
+    - name: epoch
+      "@id": "#Photometry.epoch"
+      datatype: double
+      description: Decimal year
+      fits:tunit: yr
+    - name: comments
+      "@id": "#Photometry.comments"
+      datatype: string
+      length: 1000
+      description: Free-form comments for this entry
+    - name: reference
+      "@id": "#Photometry.reference"
+      datatype: string
+      length: 30
+      description: Publication reference; links to Publications table
+      nullable: false
+
+    indexes:
+      - name: PK_Photometry
+        "@id": "#PK_Photometry"
+        description: Primary key for Photometry table
+        columns: 
+        - "#Photometry.source"
+        - "#Photometry.band"
+        - "#Photometry.reference"
+    constraints:
+      - name: Photometry_source_Sources_source
+        "@type": "ForeignKey"
+        "@id": "#FK_Photometry_source_Sources_source"
+        description: Link Photometry source to Sources table
+        columns:
+        - "#Photometry.source"
+        referencedColumns:
+        - "#Sources.source"
+      - name: Photometry_telescope_Telescopes_name
+        "@type": "ForeignKey"
+        "@id": "#FK_Photometry_telescope_Telescopes_name"
+        description: Link Photometry telescope to Telescopes table
+        columns:
+        - "#Photometry.telescope"
+        referencedColumns:
+        - "#Telescopes.name"
+      - name: Photometry_instrument_Instruments_name
+        "@type": "ForeignKey"
+        "@id": "#FK_Photometry_instrument_Instruments_name"
+        description: Link Photometry instrument to Instruments table
+        columns:
+        - "#Photometry.telescope"
+        referencedColumns:
+        - "#Instruments.name"
+      - name: Photometry_reference_Publications_name
+        "@type": "ForeignKey"
+        "@id": "#FK_Photometry_reference_Publications_name"
+        description: Link Photometry reference to Publications table
+        columns:
+        - "#Photometry.reference"
+        referencedColumns:
+        - "#Publications.name"
+

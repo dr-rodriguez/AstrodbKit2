@@ -18,7 +18,7 @@ license = {text = "BSD 3-Clause"}
 authors = [
     {name = "David Rodriguez", email = "drodriguez@stsci.edu"},
 ]
-requires-python = ">= 3.7"
+requires-python = ">= 3.11"
 dependencies = [
     "astropy",
     "astroquery",
@@ -42,7 +42,10 @@ test = [
 docs = [
     "sphinx-astropy"
 ]
-all = ["astrodbkit[test, docs]"]
+felis = [
+    "lsst-felis"
+]
+all = ["astrodbkit[test, docs, felis]"]
 
 [project.urls]
 Repository = "https://github.com/astrodbtoolkit/AstrodbKit"

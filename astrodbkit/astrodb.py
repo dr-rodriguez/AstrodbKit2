@@ -4,12 +4,13 @@ __all__ = ["__version__", "Database", "or_", "and_", "create_database"]
 
 import json
 import os
-import sqlite3
 import shutil
+import sqlite3
 
 import numpy as np
 import pandas as pd
 import sqlalchemy.types as sqlalchemy_types
+import yaml
 from astropy.coordinates import SkyCoord
 from astropy.table import Table as AstropyTable
 from astropy.units.quantity import Quantity
@@ -17,6 +18,7 @@ from sqlalchemy import Table, and_, create_engine, event, or_, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.orm.query import Query
+from sqlalchemy.schema import CreateSchema
 from tqdm import tqdm
 
 from . import FOREIGN_KEY, PRIMARY_TABLE, PRIMARY_TABLE_KEY, REFERENCE_TABLES
@@ -166,7 +168,7 @@ def load_connection(connection_string, sqlite_foreign=True, base=None, connectio
     session = Session()
 
     # Enable foreign key checks in SQLite
-    if "sqlite" in connection_string and sqlite_foreign:
+    if connection_string.startswith("sqlite") and sqlite_foreign:
         set_sqlite()
     # elif 'postgresql' in connection_string:
     #     # Set up schema in postgres (must be lower case?)
@@ -189,10 +191,12 @@ def set_sqlite():
         cursor.close()
 
 
-def create_database(connection_string, drop_tables=False):
+def create_database(connection_string, drop_tables=False, felis_schema=None):
     """
     Create a database from a schema that utilizes the `astrodbkit2.astrodb.Base` class.
     Some databases, eg Postgres, must already exist but any tables should be dropped.
+    The default behavior is to assume that a schema with SQLAlchemy definitions has been imported prior to calling this function.
+    If instead, Felis is being used to define the schema, the path to the YAML file needs to be provided to the felis_schema parameter (as a string). 
 
     Parameters
     ----------
@@ -200,12 +204,47 @@ def create_database(connection_string, drop_tables=False):
         Connection string to database
     drop_tables : bool
         Flag to drop existing tables. This is needed when the schema changes. (Default: False)
+    felis_schema : str
+        Path to schema yaml file
     """
 
-    session, base, engine = load_connection(connection_string, base=Base)
-    if drop_tables:
-        base.metadata.drop_all()
-    base.metadata.create_all(engine)  # this explicitly creates the database
+    if felis_schema is not None:
+        # Felis loader requires felis_schema
+        from felis.datamodel import Schema
+        from felis.metadata import MetaDataBuilder
+
+        # Load and validate the felis-formatted schema
+        data = yaml.safe_load(open(felis_schema, "r"))
+        schema = Schema.model_validate(data)
+        schema_name = data["name"]  # get schema_name from the felis schema file
+
+        # engine = create_engine(connection_string)
+        session, base, engine = load_connection(connection_string)
+
+        # Schema handling for various database types
+        if connection_string.startswith("sqlite"):
+            db_name = connection_string.split("/")[-1]
+            with engine.begin() as conn:
+                conn.execute(text(f"ATTACH '{db_name}' AS {schema_name}"))
+        elif connection_string.startswith("postgres"):
+            with engine.connect() as connection:
+                connection.execute(CreateSchema(schema_name, if_not_exists=True))
+                connection.commit()
+
+        # Drop tables, if requested
+        if drop_tables:
+            base.metadata.drop_all()
+
+        # Create the database
+        metadata = MetaDataBuilder(schema).build()
+        metadata.create_all(bind=engine)
+        base.metadata = metadata
+    else:
+        session, base, engine = load_connection(connection_string, base=Base)
+        if drop_tables:
+            base.metadata.drop_all()
+        base.metadata.create_all(engine)  # this explicitly creates the database
+
     return session, base, engine
 
 
@@ -276,6 +315,7 @@ class Database:
         column_type_overrides={},
         sqlite_foreign=True,
         connection_arguments={},
+        schema=None,
     ):
         """
         Wrapper for database calls and utility functions
@@ -301,7 +341,14 @@ class Database:
             Flag to enable/disable use of foreign keys with SQLite. Default: True
         connection_arguments : dict
             Additional connection arguments, like {'check_same_thread': False}. Default: {}
+        schema : str
+            Helper for setting default PostgreSQL schema. Equivalent to connection_arguments={"options": f"-csearch_path={schema}"}
         """
+
+        # Helper logic to set default postgres schema, if specified
+        if connection_string.startswith("postgres") and schema is not None:
+            if connection_arguments.get("options") is None:
+                connection_arguments["options"] = f"-csearch_path={schema}"
 
         if connection_string == "sqlite://":
             self.session, self.base, self.engine = create_database(connection_string)

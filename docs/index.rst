@@ -60,6 +60,22 @@ With that on hand, users should import their schema and prepare the database::
     connection_string = 'sqlite:///SIMPLE.db'  # connection string for a SQLite database named SIMPLE.db
     create_database(connection_string)
 
+Creating a Database with Felis schema
+-------------------------------------
+
+The `LSST Felis package <https://felis.lsst.io/index.html>`_ provides a way of writing a database schema file. 
+An example yaml file is provided in this repo (see schema_example_felis.yaml). 
+Users that want to use Felis will need to install that package (lsst-felis), which you can do alongside astrodbkit with `pip install astrodbkit[felis]`.
+Note that Python 3.11 or higher is required to use Felis.
+
+With a Felis schema file, the creation call can happen either through Felis's examples (see their docs) or with something like::
+
+    from astrodbkit.astrodb import create_database
+
+    connection_string = 'sqlite:///SIMPLE.db'  # connection string for a SQLite database named SIMPLE.db
+    felis_schema = "path/to/felis/schema.yaml"
+    create_database(connection_string, felis_schema=felis_schema)
+
 Accessing the Database
 ======================
 
