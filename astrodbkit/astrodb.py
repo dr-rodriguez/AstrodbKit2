@@ -326,8 +326,8 @@ class Database:
         connection_string : str
             Connection string to establish a database connection
         reference_tables : list
-            List of reference tables; these are treated separately from data tables.
-            Default: ['Publications', 'Telescopes', 'Instruments']
+            List of lookup tables; these are treated separately from data tables as they represent many-to-many relationships (eg, filter or telescope names).
+            See __init__.REFERENCE_TABLES for the default.
         primary_table : str
             Name of the primary source table. Default: Sources
         primary_table_key : str

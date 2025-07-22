@@ -41,6 +41,7 @@ REFERENCE_TABLES = [
 ]
 # REFERENCE_TABLES is a list of tables that do not link to the primary table.
 # These are treated separately from the other data tables that are all assumed to be linked to the primary table.
+# There are also known as lookup tables.
 PRIMARY_TABLE = "Sources"  # the primary table used for storing objects
 PRIMARY_TABLE_KEY = "source"  # the name of the primary key in the primary table; this is used for joining tables
 FOREIGN_KEY = "source"  # the name of the foreign key in other tables that refer back to the primary
