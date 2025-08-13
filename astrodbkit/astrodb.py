@@ -210,8 +210,8 @@ def create_database(connection_string, drop_tables=False, felis_schema=None):
 
     if felis_schema is not None:
         # Felis loader requires felis_schema
-        from felis.datamodel import Schema
-        from felis.metadata import MetaDataBuilder
+        from felis.datamodel import Schema # noqa: PLC0415
+        from felis.metadata import MetaDataBuilder # noqa: PLC0415
 
         # Load and validate the felis-formatted schema
         data = yaml.safe_load(open(felis_schema, "r"))
