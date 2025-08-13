@@ -22,7 +22,7 @@ except ImportError:
 # Global variables
 
 # These describe the various database tables and their links
-REFERENCE_TABLES = [
+LOOKUP_TABLES = [
     "Publications",
     "Telescopes",
     "Instruments",
@@ -39,6 +39,7 @@ REFERENCE_TABLES = [
     "CompanionList",
     "SourceTypeList",
 ]
+REFERENCE_TABLES = LOOKUP_TABLES  # prior name, for backwards compatibility
 # REFERENCE_TABLES is a list of tables that do not link to the primary table.
 # These are treated separately from the other data tables that are all assumed to be linked to the primary table.
 # There are also known as lookup tables.

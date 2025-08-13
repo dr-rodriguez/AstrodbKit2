@@ -97,13 +97,13 @@ The database is now read to be used. If the database is empty, see below how to 
 When using PostgreSQL databases, it may be useful to pass along connection_arguments that specify the schema to use. For example::
 
     CONNECTION_STRING = "postgresql+psycopg2://user:password@server:port/database"
-    REFERENCE_TABLES = [
+    LOOKUP_TABLES = [
         "Publications",
         "Surveys",
     ]
 
     db = Database(CONNECTION_STRING, 
-        reference_tables=REFERENCE_TABLES, 
+        lookup_tables=LOOKUP_TABLES, 
         connection_arguments={'options': '-csearch_path=my_schema'}
         )
     # This will use my_schema as the default schema for this connection
