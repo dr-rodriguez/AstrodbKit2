@@ -21,7 +21,7 @@ from sqlalchemy.orm.query import Query
 from sqlalchemy.schema import CreateSchema
 from tqdm import tqdm
 
-from . import FOREIGN_KEY, PRIMARY_TABLE, PRIMARY_TABLE_KEY, REFERENCE_TABLES
+from . import FOREIGN_KEY, PRIMARY_TABLE, PRIMARY_TABLE_KEY, LOOKUP_TABLES
 from .spectra import load_spectrum
 from .utils import datetime_json_parser, deprecated_alias, get_simbad_names, json_serializer
 
@@ -210,8 +210,8 @@ def create_database(connection_string, drop_tables=False, felis_schema=None):
 
     if felis_schema is not None:
         # Felis loader requires felis_schema
-        from felis.datamodel import Schema
-        from felis.metadata import MetaDataBuilder
+        from felis.datamodel import Schema # noqa: PLC0415
+        from felis.metadata import MetaDataBuilder # noqa: PLC0415
 
         # Load and validate the felis-formatted schema
         data = yaml.safe_load(open(felis_schema, "r"))
@@ -306,10 +306,11 @@ def copy_database_schema(
 class Database:
     """Database handler class"""
 
+    @deprecated_alias(reference_tables="lookup_tables")
     def __init__(
         self,
         connection_string,
-        reference_tables=REFERENCE_TABLES,
+        lookup_tables=LOOKUP_TABLES,
         primary_table=PRIMARY_TABLE,
         primary_table_key=PRIMARY_TABLE_KEY,
         foreign_key=FOREIGN_KEY,
@@ -325,9 +326,9 @@ class Database:
         ----------
         connection_string : str
             Connection string to establish a database connection
-        reference_tables : list
-            List of reference tables; these are treated separately from data tables.
-            Default: ['Publications', 'Telescopes', 'Instruments']
+        lookup_tables : list
+            List of lookup tables; these are treated separately from data tables as they represent many-to-many relationships (eg, filter or telescope names).
+            See __init__.LOOKUP_TABLES for the default.
         primary_table : str
             Name of the primary source table. Default: Sources
         primary_table_key : str
@@ -369,7 +370,7 @@ class Database:
         with self.engine.connect() as conn:
             self.metadata.reflect(conn)
 
-        self._reference_tables = reference_tables
+        self._lookup_tables = lookup_tables
         self._primary_table = primary_table
         self._primary_table_key = primary_table_key
         self._foreign_key = foreign_key
@@ -482,7 +483,7 @@ class Database:
         # Loop over tables (not reference tables) and gather the information. Start with the primary table, though
         self._inventory_query(data_dict, self._primary_table, name)
         for table in self.metadata.tables:
-            if table in self._reference_tables + [self._primary_table]:
+            if table in self._lookup_tables + [self._primary_table]:
                 continue
             self._inventory_query(data_dict, table, name)
 
@@ -851,7 +852,7 @@ class Database:
 
         # Output reference tables
         print(f"Storing reference tables to {os.path.join(directory, reference_directory)}...")
-        for table in self._reference_tables:
+        for table in self._lookup_tables:
             # Skip reference tables that are not actually in the database
             if table not in self.metadata.tables.keys():
                 continue
@@ -995,7 +996,7 @@ class Database:
                 conn.execute(self.metadata.tables[table.name].delete())
 
         # Load reference tables first
-        for table in self._reference_tables:
+        for table in self._lookup_tables:
             if verbose:
                 print(f"Loading {table} table")
             # Check if the reference table is in the sub-directory
@@ -1018,7 +1019,7 @@ class Database:
         for file in tqdm(os.listdir(directory_of_sources)):
             # Skip reference tables
             core_name = file.replace(".json", "")
-            if core_name in self._reference_tables:
+            if core_name in self._lookup_tables:
                 continue
 
             # Skip non-JSON files or hidden files

@@ -22,15 +22,15 @@ For example, the `SIMPLE database <https://github.com/SIMPLE-AstroDB/SIMPLE-db>`
 
  - the primary Sources table, with coordinate information for each target
  - several object data tables, like Photometry, Spectra, etc, that contain information for each target
- - reference tables, like Publications, Telescopes, etc, that list other information that is used throughout the database, but doesn't refer to a particular target
+ - lookup tables, like Publications, Telescopes, etc, that list other information that is used throughout the database, but doesn't refer to a particular target. These are sometimes referred to as lookup or reference tables.
 
 The goal of **AstrodbKit** is to link together the object tables together in order
-to express them as a single entity, while still retaining the information for other reference tables.
+to express them as a single entity, while still retaining the information for other lookup tables.
 **AstrodbKit** can read and write out an entire target's data as a single JSON file for ease of transport and version
-control. Reference tables are also written as JSON files, but organized differently-
+control. Lookup tables are also written as JSON files, but organized differently-
 a single file per table with multiple records.
 An **AstrodbKit**-supported database can thus be exported to two types of JSON files:
-individual target files and reference table files
+individual target files and lookup table files
 If your database is constructed in a similar fashion, it will work well with **AstrodbKit**.
 Other databases can still benefit from some of the functionality of **AstrodbKit**,
 but they might not work properly if attempting to use the save/load methods.
@@ -90,30 +90,32 @@ then initialize the database with the :py:class:`astrodbkit.astrodb.Database()` 
 The database is now read to be used. If the database is empty, see below how to populate it.
 
 .. note:: The :py:class:`astrodbkit.astrodb.Database()` class has many parameters that can be set to
-          control the names of primary/reference tables. By default, these match the SIMPLE database, but users can
+          control the names of primary/lookup tables. By default, these match the SIMPLE database, but users can
           configure them for their own needs and can pass them here or modify their __init__.py file.
 
 
 When using PostgreSQL databases, it may be useful to pass along connection_arguments that specify the schema to use. For example::
 
     CONNECTION_STRING = "postgresql+psycopg2://user:password@server:port/database"
-    REFERENCE_TABLES = [
+    LOOKUP_TABLES = [
         "Publications",
         "Surveys",
     ]
 
     db = Database(CONNECTION_STRING, 
-        reference_tables=REFERENCE_TABLES, 
+        lookup_tables=LOOKUP_TABLES, 
         connection_arguments={'options': '-csearch_path=my_schema'}
         )
     # This will use my_schema as the default schema for this connection
+
+.. note:: For historical reasons, lookup tables are referred internally as reference tables. 
 
 Loading the Database
 --------------------
 
 **Astrodbkit2** contains methods to output the full contents of the database as a list of JSON files.
 It can likewise read in a directory of these files to populate the database. 
-By default, reference tables (eg, Publications, Telescopes, etc) and source tables are respectively stored in `reference/` and `source/` sub-directories of `data/`.
+By default, lookup tables (eg, Publications, Telescopes, etc) and source tables are respectively stored in `reference/` and `source/` sub-directories of `data/`.
 This is how SIMPLE is currently version controlled. 
 
 To load a database of this form, do the following::
@@ -271,7 +273,7 @@ Full String Search
 Similar to the Identifier Search above, one can perform a case-insensitive search for
 any string against every string column in the database with :py:meth:`~astrodbkit.astrodb.Database.search_string`.
 The output is a dictionary with keys for each table that matched results.
-This can be useful to find all results matching a particular reference regardless of table::
+This can be useful to find all results matching a particular publication regardless of table::
 
     db.search_string('twa')  # search for any records with 'twa' anywhere in the database
     db.search_string('Cruz18', fuzzy_search=False)  # search for strings exactly matching Cruz19 anywhere in the database
@@ -438,8 +440,8 @@ Saving the Database
 ===================
 
 If users perform changes to a database, they will want to output this to disk to be version controlled.
-**Astrodbkit** provides methods to save an individual source or reference table as well as all of the data stored in the database. 
-By default, reference tables are stored in a sub-directory of `data/` called "reference"; this can be overwritten by 
+**Astrodbkit** provides methods to save an individual source or lookup table as well as all of the data stored in the database. 
+By default, lookup/reference tables are stored in a sub-directory of `data/` called "reference"; this can be overwritten by 
 supplying a `reference_directory` variable into `save_database` or `save_reference_table`. 
 Similarly, source/object tables are stored in a sub-directory of `data/` called "source" which can be overwritten by supplying  a `source_directory` variable.
 
@@ -448,7 +450,7 @@ We recommend using `save_database` as that outputs the entire database contents 
     # Save single object
     db.save_json('2MASS J13571237+1428398', 'data')
 
-    # Save single reference table
+    # Save single lookup/reference table
     db.save_reference_table('Publications', 'data')
 
     # Save entire database to directory 'data/' with 'reference/' and 'source/' subdirectories.
@@ -517,7 +519,7 @@ Here we provide useful tips or guidance when working with **AstrodbKit**.
 Handling Relationships Between Object Tables
 --------------------------------------------
 
-Becuase **AstrodbKit** expects a single primary table, object tables that point back to it, and any number of reference tables, it can be difficult to handle relationships between object tables. 
+Becuase **AstrodbKit** expects a single primary table, object tables that point back to it, and any number of lookup/reference tables, it can be difficult to handle relationships between object tables. 
 
 As an example, consider the scenario where you want to store companion information to your sources, such as a table to store the relationship with orbital separation and a separate one to store general parameters. 
 You may be calling these CompanionRelationship and CompanionParameters, respectively. 
@@ -527,7 +529,7 @@ You might find it attempting to load CompanionParameters only to find that Compa
 
 The better approach is to define a lookup table that will store the companion identifiers which will be used as the foreign keys. 
 For example, a CompanionList table that both CompanionParameters and CompanionRelationship can refer to. 
-This would be a reference table, similar to Telescopes or Publications, while CompanionParameters and CompanionRelationship would be object tables that require tying back to a specific source in the Sources table.
+This would be a lookup table, similar to Telescopes or Publications, while CompanionParameters and CompanionRelationship would be object tables that require tying back to a specific source in the Sources table.
 Essentially, this is normalizing the database a bit further and serves to avoid some common issues with foreign keys.
 
 Reference/API

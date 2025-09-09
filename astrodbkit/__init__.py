@@ -22,7 +22,7 @@ except ImportError:
 # Global variables
 
 # These describe the various database tables and their links
-REFERENCE_TABLES = [
+LOOKUP_TABLES = [
     "Publications",
     "Telescopes",
     "Instruments",
@@ -39,8 +39,10 @@ REFERENCE_TABLES = [
     "CompanionList",
     "SourceTypeList",
 ]
+REFERENCE_TABLES = LOOKUP_TABLES  # prior name, for backwards compatibility
 # REFERENCE_TABLES is a list of tables that do not link to the primary table.
 # These are treated separately from the other data tables that are all assumed to be linked to the primary table.
+# There are also known as lookup tables.
 PRIMARY_TABLE = "Sources"  # the primary table used for storing objects
 PRIMARY_TABLE_KEY = "source"  # the name of the primary key in the primary table; this is used for joining tables
 FOREIGN_KEY = "source"  # the name of the foreign key in other tables that refer back to the primary
